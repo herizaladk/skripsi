@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Home Skripsi</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/style.css') }}">
+</head>
+
+<body>
+
+    <nav>
+        <div class="logo">
+            <!-- <h4>Skripsi</h4> -->
+        </div>
+        <ul class="nav-links">
+            <li>
+                <a href="#">Home</a>
+            </li>
+            <li>
+                <a href="#help">Help</a>
+            </li>
+            <li>
+                <a href="#about">About</a>
+            </li>
+        </ul class="nav-links">
+    </nav>
+
+    <div class="home-area" id="home">
+        <div class="container">
+            <img src="/static/image/aset2.jpg.png" alt="Meeting" align='right'>
+            <br />
+            <br />
+            <br />
+            <h1>Stock Price <br /> Prediction</h1>
+            <br />
+            <!-- <form method="POST" enctype="multipart/form-data">
+                <label for="file">
+                    Try It!
+                </label>
+                <input type="file" onchange="form.submit()" id="file" accept="csv">
+                </form> -->
+            <a href="results">
+
+                <button class="upload btn" for>Try It!</button>
+
+            </a>
+        </div>
+    </div>
+
+    <div class="help-area" id="help">
+        <div class="text-part">
+            <h1>Help</h1>
+            <br />
+            <br />
+            <div id="slider">
+                <input type="radio" name="slider" id="slide1" checked>
+                <input type="radio" name="slider" id="slide2">
+                <input type="radio" name="slider" id="slide3">
+                <input type="radio" name="slider" id="slide4">
+                <div id="slides">
+                    <div id="overflow">
+                        <div class="inner">
+                            <div class="slide slide_1">
+                                <div class="slide-content">
+                                    <h2>Slide 1</h2>
+                                    <p>Content for Slide 1</p>
+                                </div>
+                            </div>
+                            <div class="slide slide_2">
+                                <div class="slide-content">
+                                    <h2>Slide 2</h2>
+                                    <p>Content for Slide 2</p>
+                                </div>
+                            </div>
+                            <div class="slide slide_3">
+                                <div class="slide-content">
+                                    <h2>Slide 3</h2>
+                                    <p>Content for Slide 3</p>
+                                </div>
+                            </div>
+                            <div class="slide slide_4">
+                                <div class="slide-content">
+                                    <h2>Slide 4</h2>
+                                    <p>Content for Slide 4</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="controls">
+                    <label for="slide1"></label>
+                    <label for="slide2"></label>
+                    <label for="slide3"></label>
+                    <label for="slide4"></label>
+                </div>
+                <div id="bullets">
+                    <label for="slide1"></label>
+                    <label for="slide2"></label>
+                    <label for="slide3"></label>
+                    <label for="slide4"></label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="about-area" id="about">
+        <div class="contact">
+            <div class="contact-method">
+                <a href="github.com"><img src="/static/image/github.png"></a>
+            </div>
+            <div class="contact-method">
+                <a href="gmail.com"><img src="/static/image/gmail-logo.png"></a>
+            </div>
+            <div class="contact-method">
+                <a href="linkedin.com"><img src="/static/image/linkedin-logo.png"></a>
+            </div>
+        </div>
+
+        <div class="text-part">
+            <h1>About</h1>
+            <p> © 2020 Herizal Kurniawan All Rights Reserved </p>
+        </div>
+    </div>
+
+</body>
+
+</html>
