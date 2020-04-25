@@ -4,6 +4,8 @@
 <head>
     <title>Results</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
 </head>
 
 <body>
@@ -17,12 +19,31 @@
     
     <div class="results-area" id="results">
         {{ name }}
-        <div class="results-container">
+<!-- 
+        <div class="header">
+            <h2>
+                Plotly Chart Demo
+            </h2>
+        </div> -->
+     
+        <div id="chart" class="chart">
         </div>
+
     </div>
+
+   
 
 
 
 </body>
+
+
+    <script type="text/javascript">
+        
+        var graphs = {{graph | safe}};
+       
+        Plotly.plot('chart',graphs,{});        
+
+    </script> 
 
 </html>
