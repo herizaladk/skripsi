@@ -4,7 +4,7 @@
 <head>
     <title>Results</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/style.css') }}">
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> 
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
 </head>
 
@@ -15,35 +15,47 @@
         <input type=submit value=Upload>
     </form>
     Shape is: {{ shape }}
+    <!-- RMSE : {{valid}} -->
 
-    
+
     <div class="results-area" id="results">
         {{ name }}
-<!-- 
-        <div class="header">
-            <h2>
-                Plotly Chart Demo
-            </h2>
+
+        <!-- <div id="chart" class="chart">
         </div> -->
-     
+
+        <div id="charts" class="charts">
+        </div>
+
         <div id="chart" class="chart">
         </div>
 
     </div>
-
-   
-
-
-
 </body>
 
 
-    <script type="text/javascript">
-        
-        var graphs = {{graph | safe}};
-       
-        Plotly.plot('chart',graphs,{});        
+<!-- <script type="text/javascript">
 
-    </script> 
+    var graphs = {{ graph | safe}};
+
+    Plotly.plot('chart', graphs, {});
+
+</script> -->
+
+<script type="text/javascript">
+
+    var graphs = {{ graph | safe}};
+
+    Plotly.plot('charts', graphs, {});
+
+</script>
+
+<script type="text/javascript">
+
+    var graphs = {{ graphs | safe}};
+
+    Plotly.plot('chart', graphs, {});
+
+</script>
 
 </html>
