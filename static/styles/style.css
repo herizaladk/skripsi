@@ -12,7 +12,6 @@ html{
     scroll-behavior: smooth;
 }
 
-
 nav{
     display: flex;
     justify-content: space-around;
@@ -353,4 +352,25 @@ p{
     }
  }
 
+ /* result.html */
+.input-area input[type="file"]{
+   display: none;
+}
+
+.input-area label {
+   color: white;
+   height: 60px;
+   width: 250px;
+   background-color: #F5AF09;
+   position: absolute;
+   margin: auto;
+   top: 0;
+   bottom: 0;
+   left: 0;
+   right: 0;
+   font-size: 20px;
+   display: flex;
+   justify-content: center;
+
+}
  
