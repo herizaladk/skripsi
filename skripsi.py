@@ -4,7 +4,9 @@ from werkzeug.utils import secure_filename
 import pandas as pd
 import tensorflow as tf
 import numpy as np
+from numpy import array
 from keras.models import Sequential
+from keras import backend
 from keras.layers import LSTM, Dense
 from keras.preprocessing import sequence
 from keras.models import load_model
@@ -44,9 +46,13 @@ def results():
         # CSV Input
         df = pd.read_csv(request.files.get('file'))
 
-        df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
-        df.set_axis(df['Date'], inplace=True)
-        df.drop(columns=['Open', 'High', 'Low', 'Volume'], inplace=True)
+        df['Date'] =  pd.to_datetime(df['Date'], format='%Y/%m/%d',dayfirst=True)
+        df = df.sort_values(by=['Date'], ascending=[True])
+        df.set_index('Date', inplace=True)
+
+        df = df.resample('D').ffill().reset_index()
+        df = df.fillna(method='ffill')
+        df.drop(columns=['Open', 'High', 'Low', 'Adj Close','Volume'], inplace=True)
 
         # Splitting Data
         scaler = MinMaxScaler()
@@ -67,16 +73,15 @@ def results():
         # Load Model
         look_back = 15
 
-        train_generator = TimeseriesGenerator(close_train, close_train, length=look_back, batch_size=20)
+        # train_generator = TimeseriesGenerator(close_train, close_train, length=look_back, batch_size=20)
         test_generator = TimeseriesGenerator(
             close_test, close_test, length=look_back, batch_size=1)
+        
+        def rmse(test_generator,train_generator):
+	        return backend.sqrt(backend.mean(backend.square(test_generator - train_generator), axis=-1))
 
-        model = load_model('lstm.h5')
-        metrics_names = "MSE"
-
-        #Evaluation
-        scores = model.evaluate(train_generator, verbose=0)
-        eval = ("%s: %.2f%%" % (metrics_names, scores*100))
+        model = load_model('model.h5', custom_objects={'rmse': rmse})
+        # metrics_names = "RMSE"
 
         # Training
         close_train = scaler.inverse_transform(close_train)
@@ -115,38 +120,75 @@ def results():
         fig = go.Figure(data=[trace1, trace2, trace3], layout=layout)
         graph = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
+         #Evaluation
+        validtest = close_test
+        validtest = validtest[:len(prediction)]
+
+        rmspe = (np.sqrt(np.mean(np.square((validtest - prediction) / validtest)))) * 100
+        eval =  ("%.2f%%" % ((rmspe)))
+
         # Multi Step Training
 
-        def predict(num_prediction, model):
-            prediction_list = close_data[-look_back:]
+        # def predict(num_prediction, model):
+        #     prediction_list = close_data[-look_back:]
 
-            for _ in range(num_prediction):
-                x = prediction_list[-look_back:]
-                x = x.reshape((1, look_back, 1))
-                out = model.predict(x)[0][0]
-                prediction_list = np.append(prediction_list, out)
-            prediction_list = prediction_list[look_back-1:]
+        #     for _ in range(num_prediction):
+        #         x = prediction_list[-look_back:]
+        #         x = x.reshape((1, look_back, 1))
+        #         out = model.predict(x)[0][0]
+        #         prediction_list = np.append(prediction_list, out)
+        #     prediction_list = prediction_list[look_back-1:]
 
-            return prediction_list
+        #     return prediction_list
+
+        # def predict_dates(num_prediction):
+        #     last_date = df['Date'].values[-1]
+        #     prediction_dates = pd.date_range(
+        #         last_date, periods=num_prediction+1).tolist()
+        #     return prediction_dates
+        pred = request.form['num_prediction']
+        num_prediction = int(pred)+1
+        # num_prediction = pred
+
+        forecast_list = close_data[-look_back:]
+        for forecast in range(num_prediction):
+            x_input = array(close_data[-look_back:])
+            x_input = x_input.reshape((1, look_back, 1))
+            yhat = model.predict(x_input, verbose=0)
+            forecast_list = np.append(forecast_list,yhat)
+        # print (forecast_list)
+
+        yhat  = forecast_list.reshape((-1,1))
+        yhat = scaler.inverse_transform(yhat)
+        yhat = yhat.reshape((-1))
+
+        close_data = close_data.reshape((-1,1))
+        close_data = scaler.inverse_transform(close_data)
+        close_data = close_data.reshape((-1))
+
+        yhat[:1] = close_data[-1:]
+        # print(yhat)
 
         def predict_dates(num_prediction):
             last_date = df['Date'].values[-1]
-            prediction_dates = pd.date_range(
-                last_date, periods=num_prediction+1).tolist()
+            prediction_dates = pd.date_range(last_date, periods=num_prediction+1).tolist()
             return prediction_dates
 
-        pred = request.form['num_prediction']
-        num_prediction = int(pred)
-        forecast = predict(num_prediction, model)
         forecast_dates = predict_dates(num_prediction)
-        forecast = forecast.reshape((-1, 1))
 
-        forecast = scaler.inverse_transform(forecast)
+        # pred = request.form['num_prediction']
+        # num_prediction = int(pred)+1
 
-        forecast = forecast.reshape((-1))
+        # forecast = predict(num_prediction, model)
+        # forecast_dates = predict_dates(num_prediction)
+        # forecast = forecast.reshape((-1, 1))
 
-        close_data = scaler.inverse_transform(close_data)
-        close_data = close_data.reshape((-1))
+        # forecast = scaler.inverse_transform(forecast)
+
+        # forecast = forecast.reshape((-1))
+
+        # close_data = scaler.inverse_transform(close_data)
+        # close_data = close_data.reshape((-1))
 
         # Multi Step Chart
         trace1 = go.Scatter(
@@ -157,7 +199,7 @@ def results():
         )
         trace2 = go.Scatter(
             x=forecast_dates,
-            y=forecast,
+            y=yhat,
             mode='lines',
             name='Prediction'
         )
@@ -170,5 +212,13 @@ def results():
         figs = go.Figure(data=[trace1, trace2], layout=layout)
         graphs = json.dumps(figs, cls=plotly.utils.PlotlyJSONEncoder)
 
-        return render_template('results.html', shape=df.shape, name=request.files['file'].filename,eval=eval, graph=graph, graphs=graphs)
+        dftabelcast = pd.Series(yhat)
+        dftabeldates = pd.Series(forecast_dates)
+
+        frame = { 'Tanggal': dftabeldates, 'Prediksi': dftabelcast } 
+        result = pd.DataFrame(frame) 
+        # result.index = np.arange(1,len(result)+1)
+        predshow = result.head().to_html(classes = 'frames')
+
+        return render_template('results.html', shape=df.shape, name=request.files['file'].filename,eval=eval, graph=graph, graphs=graphs, predshow = [predshow],titles =['NA'] )
     return render_template('results.html')
