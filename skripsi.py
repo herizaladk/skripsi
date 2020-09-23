@@ -73,7 +73,7 @@ def results():
         # Load Model
         look_back = 15
 
-        # train_generator = TimeseriesGenerator(close_train, close_train, length=look_back, batch_size=20)
+        train_generator = TimeseriesGenerator(close_train, close_train, length=look_back, batch_size=20)
         test_generator = TimeseriesGenerator(
             close_test, close_test, length=look_back, batch_size=1)
         
@@ -148,17 +148,63 @@ def results():
         #     return prediction_dates
         pred = request.form['num_prediction']
         num_prediction = int(pred)+1
+        close_data = close_data.reshape((-1))
         # num_prediction = pred
 
-        forecast_list = close_data[-look_back:]
-        for forecast in range(num_prediction):
-            x_input = array(close_data[-look_back:])
-            x_input = x_input.reshape((1, look_back, 1))
-            yhat = model.predict(x_input, verbose=0)
-            forecast_list = np.append(forecast_list,yhat)
-        # print (forecast_list)
+        # forecast_list = close_data[-look_back:]
+        # for _ in range(num_prediction):
+        #     x_input = array(close_data[-look_back:])
+        #     x_input = x_input.reshape((1, look_back, 1))
+        #     yhat = model.predict(x_input, verbose=0)
+        #     forecast_list = np.append(forecast_list,yhat)
+        # # print (forecast_list)
+        X = train_generator
+        y = test_generator
 
-        yhat  = forecast_list.reshape((-1,1))
+        def split_sequence(sequence, n_steps_in, n_steps_out):
+            X, y = list(), list()
+            for i in range(len(sequence)):
+                # find the end of this pattern
+                end_ix = i + n_steps_in
+                out_end_ix = end_ix + n_steps_out
+                # check if we are beyond the sequence
+                if out_end_ix > len(sequence):
+                    break
+                # gather input and output parts of the pattern
+                seq_x, seq_y = sequence[i:end_ix], sequence[end_ix:out_end_ix]
+                X.append(seq_x)
+                y.append(seq_y)
+            return array(X), array(y)
+
+        # define input sequence
+        raw_seq = close_data
+        # choose a number of time steps
+        n_steps_in, n_steps_out = look_back, num_prediction
+        # split into samples
+        X, y = split_sequence(raw_seq, n_steps_in, n_steps_out)
+
+        # reshape from [samples, timesteps] into [samples, timesteps, features]
+        n_features = 1
+        X = X.reshape((X.shape[0], X.shape[1], n_features))
+
+        model = Sequential()
+        model.add(
+            LSTM(10,
+                activation='relu',
+                input_shape=(look_back,1),
+                )
+        )
+        model.add(Dense(num_prediction))
+        model.compile(optimizer='Adam', loss='mse')
+
+        model.fit(X, y, epochs=25, verbose=1)
+
+        x_input = raw_seq[-n_steps_in:]
+        x_input = x_input.reshape((1, n_steps_in, n_features))
+        yhat = model.predict(x_input, verbose=0)
+
+
+        yhat = yhat.reshape((-1,1))
         yhat = scaler.inverse_transform(yhat)
         yhat = yhat.reshape((-1))
 
@@ -215,10 +261,11 @@ def results():
         dftabelcast = pd.Series(yhat)
         dftabeldates = pd.Series(forecast_dates)
 
-        frame = { 'Tanggal': dftabeldates, 'Prediksi': dftabelcast } 
+        frame = { 'Tanggal': dftabeldates, 'Harga': dftabelcast } 
         result = pd.DataFrame(frame) 
+        notes = "Index 0 Adalah Harga Sebelum Prediksi"
         # result.index = np.arange(1,len(result)+1)
-        predshow = result.head().to_html(classes = 'frames')
+        predshow = result.head(num_prediction).to_html(classes = 'frames')
 
-        return render_template('results.html', shape=df.shape, name=request.files['file'].filename,eval=eval, graph=graph, graphs=graphs, predshow = [predshow],titles =['NA'] )
+        return render_template('results.html', shape=df.shape, name=request.files['file'].filename,eval=eval, graph=graph, graphs=graphs, predshow = [predshow], titles =['NA'], notes=notes  )
     return render_template('results.html')

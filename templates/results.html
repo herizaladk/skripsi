@@ -13,7 +13,7 @@
     <form method=post enctype=multipart/form-data>
         <br>
         <input type=file name=file>
-        <input type=number name=num_prediction placeholder="(1-15)" min="1" max="15">
+        <input type=number name=num_prediction placeholder="(1-14)" min="1" max="14">
         <input type=submit value=Upload>
     </form>
     <!-- Shape is: {{ shape }} -->
@@ -40,7 +40,11 @@
         <!-- <div class="tabel" id="tabel"> -->
             <!-- <h1>Tabel Prediksi</h1> -->
         <br>
-        
+
+        <p>
+            {{notes}}
+        </p>
+
         {% for table in predshow %}
             <h2>{{titles[loop.index]}}</h2>
             {{ table|safe }}
